@@ -4,7 +4,7 @@ import uvicorn
 from schemas.review import Review, CreateReview
 from schemas import list_serial_from_db
 from bson import ObjectId
-from database import collection_name
+from database import reviews_collection
 from pymongo import ReturnDocument
 
 
@@ -22,13 +22,13 @@ app.add_middleware(
 
 @app.get("/api/reviews")
 async def get_reviews():
-    reviews = await list_serial_from_db(collection_name.find())
+    reviews = await list_serial_from_db(reviews_collection.find())
     return [Review(**review).model_dump(by_alias=True) for review in reviews]
 
 
 @app.get("/api/review/{review_id}")
 async def get_review(review_id):
-    review = await collection_name.find_one({'_id': ObjectId(review_id)})
+    review = await reviews_collection.find_one({'_id': ObjectId(review_id)})
     review['id'] = str(review.pop('_id'))
     return Review(**review).model_dump(by_alias=True)
 
@@ -36,7 +36,7 @@ async def get_review(review_id):
 @app.post("/api/review")
 async def add_review(review: CreateReview):
     try:
-        result = await collection_name.insert_one(review.model_dump(by_alias=True))
+        result = await reviews_collection.insert_one(review.model_dump(by_alias=True))
         return Review(
             **{**review.model_dump(), "id": str(result.inserted_id)}).model_dump(by_alias=True)
     except ValueError:
@@ -48,7 +48,7 @@ async def update_review(review: Review):
     try:
         to_update_review = review.model_dump(by_alias=True)
         to_update_review_id = to_update_review.pop('id')
-        result = await (collection_name.find_one_and_update(
+        result = await (reviews_collection.find_one_and_update(
             {"_id": ObjectId(to_update_review_id)},
             {"$set": to_update_review},
             return_document=ReturnDocument.AFTER))
@@ -62,13 +62,13 @@ async def update_review(review: Review):
 
 @app.delete("/api/reviews")
 async def delete_reviews():
-    result = await collection_name.delete_many({})
+    result = await reviews_collection.delete_many({})
     return {"deleted_count": result.deleted_count}
 
 
 @app.post("/api/reviews")
 async def add_reviews():
-    await collection_name.insert_many([
+    await reviews_collection.insert_many([
         {
             "titleEng": "Inception",
             "titleRus": "Начало",

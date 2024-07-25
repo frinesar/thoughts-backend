@@ -14,4 +14,4 @@ uri = f'''mongodb+srv://{LOGIN}:{
 
 client = motor.motor_asyncio.AsyncIOMotorClient(uri)
 db = client.ReviewData
-collection_name = db.Reviews
+reviews_collection = db.Reviews
